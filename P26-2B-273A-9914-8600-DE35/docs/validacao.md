@@ -122,3 +122,69 @@ sem as tabelas.
   do scaffold, não uma sessão real.
 - Nenhuma funcionalidade do Projeto #19 foi implementada ainda: o que está no ar
   é o painel de diagnóstico gerado pelo `iniciar.mjs`.
+
+---
+
+## V3 — Login com Discord OAuth2 de ponta a ponta
+
+**Data:** 10/11/2026
+**Agente:** `auth-discord` implementou; `qa-validacao` verificou
+**Harness:** Claude (sistema de arquivos + navegador integrado para configurar
+o Discord Developer Portal); execução do servidor local pelo Guilherme
+**Ambiente:** `wrangler pages dev` em `http://localhost:8788`
+
+### Por que este teste existe
+
+O item 2 da rubrica exige login **exclusivo** via Discord OAuth2 importando
+`user_id`, nome e avatar. Chegar na tela inicial depois de autorizar não prova
+nada: o redirect pode acontecer sem que a sessão tenha sido criada. A prova é
+o servidor reconhecer a pessoa numa requisição seguinte.
+
+### O teste
+
+`GET /api/auth/eu` após completar o fluxo de autorização.
+
+**O que contaria como falha:** `{"autenticado": false}`, ou ausência de
+`avatarUrl` — que indicaria que o hash do avatar não foi convertido em URL.
+
+### Resultado observado
+
+```json
+{
+  "autenticado": true,
+  "userId": "6990363395421xxxxx",
+  "nome": "Guilherme Tyszkouski",
+  "avatarUrl": "https://cdn.discordapp.com/avatars/6990363395421xxxxx/cd741ffc...png?size=128"
+}
+```
+
+(identificador parcialmente omitido: o repositório é público)
+
+**Situação: aprovado.** Uma única resposta prova cinco etapas: validação do
+`state`, troca do `code` por `access_token`, segunda chamada a
+`GET /users/@me`, gravação em `discord_users` e leitura do cookie assinado.
+
+### Decisões de segurança verificadas no código
+
+- `state` aleatório gerado no início e conferido no retorno, contra CSRF de
+  login. A documentação do Discord o trata como opcional e recomendado.
+- Troca do código feita servidor-a-servidor; o Client Secret nunca chega ao
+  navegador.
+- Corpo da troca em `application/x-www-form-urlencoded` — a documentação do
+  Discord rejeita JSON nesse endpoint.
+- Escopo `identify` apenas. `email` não foi solicitado: o projeto não precisa,
+  e cada escopo a mais é dado pessoal sob nossa responsabilidade.
+- Cookie `HttpOnly`, `SameSite=Lax`, `Secure` em HTTPS, com expiração explícita.
+- Chave do usuário é o `id` do Discord, não o nome: `global_name` e `username`
+  mudam quando a pessoa troca o apelido, e a autoria dos resumos se perderia.
+- `/api/auth/sair` é POST, não GET: com GET, uma tag `<img>` em qualquer site
+  deslogaria quem visitasse a página.
+
+### O que este teste NÃO cobre
+
+- Produção: os segredos ainda não foram enviados ao Cloudflare Pages, então o
+  login só funciona em `localhost`. `GET /api/status` em produção continua
+  reportando `discordOAuthConfigured: false`.
+- Expiração da sessão após sete dias não foi testada.
+- A interface ainda mostra o perfil fictício do scaffold; ela não consome
+  `/api/auth/eu` ainda.
