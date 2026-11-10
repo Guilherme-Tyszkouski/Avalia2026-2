@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projeto #19 — P26-2B-273A-9914-8600-DE35</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <strong>Projeto #19: Repositório de Resumos e Snippets da Turma</strong>
+      </div>
+      <div class="discord-badge" id="discordProfile">
+        <span id="discordUserText">Discord OAuth2 · Conectado</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <span class="pill">Projeto Oficial #19</span>
+      <h1>Repositório de Resumos e Snippets da Turma</h1>
+      <p class="desc">Construa uma biblioteca colaborativa para compartilhamento de resumos teóricos e pequenos trechos de código-fonte. O frontend em JavaScript puro deve apresentar um formulário de submissão categorizado por linguagem ou matéria, além de uma listagem com busca dinâmica e botão para copiar o conteúdo para a área de transferência (navigator.clipboard). O acesso e a autoria são gerenciados pelo Discord OAuth2. No Cloudflare D1, além dos textos e metadados das publicações, deve existir uma tabela de votos (upvotes) com restrição de unicidade por usuário e publicação: cada estudante pode votar apenas uma vez em um resumo útil, ordenando a listagem principal pelos materiais mais bem avaliados pela comunidade.</p>
+
+      <div class="form-row">
+        <input class="input-text" id="recordInput" type="text" placeholder="Digite um registro para gravar na Cloudflare Function + D1...">
+        <button class="btn-primary" id="sendBtn" type="button">Registrar no Cloudflare D1</button>
+      </div>
+      <div id="statusMessage" style="font-size:0.88rem;font-weight:700;color:#166534;margin-bottom:0.75rem;"></div>
+    </section>
+
+    <section class="card">
+      <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:0.85rem;">Registros Persistidos (Cloudflare Pages Functions + D1)</h2>
+      <ul class="records-list" id="recordsList">
+        <li>Carregando status da API serverless...</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer id="projectFooter">
+    Chave Única de Auditoria: <code>P26-2B-273A-9914-8600-DE35</code> · Turma 2B · Licenciado sob MIT
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
