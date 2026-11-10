@@ -2,33 +2,205 @@
 
 > **Requisito da Rubrica (25 pontos):** Uso obrigatório de no mínimo **3 agentes diferentes** (sendo obrigatoriamente **1 agente dedicado a teste e validação**), documentando em qual *harness* operaram e relacionando as *skills* na pasta `skills/`.
 
-## 1. Ambiente de Orquestração (Harness Utilizado)
-
-- **Harness Principal:** *(Descreva aqui qual harness foi utilizado, ex: Antigravity / Claude Code / Cursor / Cline / GitHub Copilot Workspace / OpenHands)*
-- **Modelo(s) Base:** *(Informe os modelos utilizados pelos agentes)*
-- **Estratégia de Coordenação:** Os agentes operaram de forma modular sobre a subpasta `P26-2B-273A-9914-8600-DE35/`, compartilhando especificações de banco de dados D1, contratos JSON das Cloudflare Pages Functions e verificação automatizada via `validar-local.mjs`.
+Este projeto usa **sete agentes**, cada um com uma fronteira de pastas
+explícita. Cada ficha abaixo marca a **Situação** do agente: `operou` quando o
+trabalho já foi feito e está no histórico de commits, `previsto` quando ainda
+não aconteceu. Nenhuma entrega está descrita antes de existir — essa é uma
+regra do próprio projeto, documentada na seção de regras comuns.
 
 ---
 
-## 2. Agentes Criados e Responsabilidades (Mínimo de 3 Agentes)
+## 1. Ambiente de Orquestração (Harness Utilizado)
 
-### Agente 1: Arquiteto Serverless, Cloudflare D1 e Segurança Discord OAuth2
-- **Papel:** Modelagem do esquema relacional SQLite no Cloudflare D1 (`migrations/0001_init.sql`), implementação do fluxo de autenticação Discord OAuth2 e validação das regras de negócio no servidor (`functions/`).
-- **Skill Utilizada:** [`skills/serverless-d1-discord/SKILL.md`](./skills/serverless-d1-discord/SKILL.md)
-- **Entregas Realizadas:**
-  - Estruturação das tabelas e índices no Cloudflare D1.
-  - Proteção das rotas serverless contra manipulação no cliente.
+- **Harness Principal:** **Claude (Cowork)**, com acesso ao sistema de arquivos
+  da máquina de desenvolvimento e a um navegador integrado. O navegador foi o
+  que permitiu configurar o Cloudflare Pages e o Discord Developer Portal sem
+  intervenção manual, parando apenas nos pontos que exigem decisão humana
+  (aceite de termos, digitação de senha, cópia do Client Secret).
+- **Harness Secundário:** **GitHub Copilot (agentes em `.github/agents/`)** no
+  VS Code, usado no projeto anterior da disciplina e disponível aqui para as
+  etapas de interface.
+- **Modelo Base:** Claude Opus 5.
+- **Execução:** os comandos de terminal (`wrangler`, `git`, `node`) foram
+  executados pelo estudante na própria máquina; o agente redigiu e explicou
+  cada um. Nenhum agente teve permissão de executar comandos destrutivos.
+- **Estratégia de Coordenação:** os agentes não conversam entre si. O estudante
+  é o barramento: leva a saída de um como entrada do próximo. A coordenação é
+  feita por fronteira de pastas e por um contrato escrito — o agente de
+  arquitetura define o modelo de dados e o formato da API; os demais
+  implementam contra o que está escrito, sem inventar formato.
 
-### Agente 2: Especialista em Interface Web Vanilla (HTML5, CSS3 e DOM)
-- **Papel:** Construção da interface responsiva e acessível utilizando exclusivamente HTML5 semântico, CSS3 moderno (sem sombras em fontes) e JavaScript puro (Vanilla JS), consumindo as rotas serverless via `fetch`.
-- **Skill Utilizada:** [`skills/vanilla-dom-ui/SKILL.md`](./skills/vanilla-dom-ui/SKILL.md)
-- **Entregas Realizadas:**
-  - Componentes visuais em `public/index.html`, `public/styles.css` e `public/app.js`.
-  - Inclusão do cabeçalho de perfil do Discord (`user_id`, nome e avatar) e rodapé oficial com a Chave Única `P26-2B-273A-9914-8600-DE35`.
+### Regras comuns a todos os agentes
 
-### Agente 3: Agente de Teste, Auditoria de Segurança e Validação (Obrigatório)
-- **Papel:** Verificação independente de ponta a ponta: inspeção de contratos de API, tentativa de contorno das validações do servidor, auditoria da rubrica de 100 pontos e execução de testes funcionais.
-- **Skill Utilizada:** [`skills/teste-validacao/SKILL.md`](./skills/teste-validacao/SKILL.md)
-- **Entregas Realizadas:**
-  - Bateria de verificação de integridade dos endpoints e conformidade com a rubrica (`validar-local.mjs` e casos de teste documentados abaixo).
-  - Relatório de validação confirmando ausência de frameworks proibidos, presença da licença MIT e funcionamento no Cloudflare.
+1. **Honestidade.** Nenhum agente afirma ter testado o que não executou. Quando
+   não validou, escreve "não validado". Toda verificação registrada em
+   `docs/validacao.md` declara **o que contaria como falha** antes de declarar
+   o resultado — um teste que não pode falhar não prova nada.
+2. **Segredos.** Nenhum agente escreve o *valor* de um segredo em arquivo,
+   commit, log ou mensagem de erro. Escreve o *nome*: `env.DISCORD_CLIENT_SECRET`.
+   Os valores vivem em variáveis de ambiente na máquina e no cofre do
+   Cloudflare Pages. O agente nunca leu o Client Secret: ele aparece como
+   "Oculto por segurança" no portal do Discord e foi copiado pelo estudante.
+3. **A regra de ouro da arquitetura.** As regras de negócio vivem no servidor.
+   A autoria de uma publicação vem da sessão verificada, nunca de um campo
+   enviado pelo cliente. O voto único é garantido por restrição no banco, não
+   por esconder um botão na tela.
+
+---
+
+## 2. Agentes Criados e Responsabilidades
+
+### Agente 1: Arquiteto de Dados e Contrato da API
+
+- **Situação:** operou.
+- **Harness:** Claude (Cowork).
+- **Papel:** definir o modelo relacional e o formato das respostas da API, e
+  registrar as decisões com as alternativas consideradas. Não escreve código de
+  funcionalidade.
+- **Skill utilizada:** [`skills/arquitetura-contrato/SKILL.md`](./skills/arquitetura-contrato/SKILL.md)
+- **Entregas realizadas:**
+  - Modelo com `publicacoes` e `votos`, apoiado na tabela `discord_users` que
+    já existia, tendo o `user_id` do Discord como chave — e não o nome, que
+    muda quando a pessoa troca o apelido e levaria a autoria junto.
+  - Decisão sobre a contagem de votos: **calculada na consulta** com
+    `LEFT JOIN + COUNT`, e não armazenada numa coluna. O contador
+    desnormalizado seria mais rápido, mas exigiria manter dois lugares em
+    sincronia. A decisão e o motivo estão em comentário dentro do próprio
+    `migrations/0002_resumos_snippets.sql`.
+  - Decisão sobre onde validar categoria: lista fechada em
+    `functions/_lib/categorias.js`, e não `CHECK` no banco, porque a lista muda
+    a cada semestre e um `CHECK` exigiria migration nova a cada mudança. O
+    `tipo` (resumo/snippet), que não muda nunca, tem `CHECK` no banco.
+
+### Agente 2: Especialista em Cloudflare D1 e Migrations
+
+- **Situação:** operou.
+- **Harness:** Claude (Cowork).
+- **Papel:** esquema relacional, migrations numeradas e forward-only, e as
+  restrições que carregam as regras do enunciado.
+- **Fronteira:** `migrations/`.
+- **Skill utilizada:** [`skills/serverless-d1-discord/SKILL.md`](./skills/serverless-d1-discord/SKILL.md)
+- **Entregas realizadas:**
+  - `migrations/0002_resumos_snippets.sql` com `publicacoes`, `votos` e a view
+    `publicacoes_com_votos`, usada pela listagem para não repetir o `JOIN` em
+    cada endpoint.
+  - **`UNIQUE (publicacao_id, usuario_id)`** na tabela `votos` — é esta linha
+    que cumpre o requisito de voto único do enunciado.
+  - Índices em `publicacoes(categoria)`, `publicacoes(autor_id)` e
+    `votos(publicacao_id)`, este último porque contar votos por publicação é o
+    caminho mais percorrido da aplicação.
+  - Migrations aplicadas e conferidas em `--local` e `--remote`.
+
+### Agente 3: Especialista em Autenticação Discord OAuth2
+
+- **Situação:** operou.
+- **Harness:** Claude (Cowork), incluindo o navegador integrado para configurar
+  o Discord Developer Portal.
+- **Papel:** fluxo OAuth2 completo e gestão de sessão.
+- **Fronteira:** `functions/api/auth/`, `functions/_lib/sessao.js`.
+- **Skill utilizada:** [`skills/discord-oauth2/SKILL.md`](./skills/discord-oauth2/SKILL.md)
+- **Entregas realizadas:**
+  - `GET /api/auth/discord` — monta a autorização com `state` aleatório contra
+    CSRF de login.
+  - `GET /api/auth/discord/callback` — confere o `state`, troca o código por
+    token servidor-a-servidor, e faz a **segunda chamada** a
+    `GET /users/@me`, necessária porque o Discord, diferente do Google, não
+    devolve `id_token`.
+  - `GET /api/auth/eu` e `POST /api/auth/sair`. O `sair` é POST e não GET: com
+    GET, uma tag `<img>` em qualquer site deslogaria quem visitasse a página.
+  - Sessão como cookie assinado com HMAC-SHA256, `HttpOnly`, `SameSite=Lax`,
+    `Secure` em HTTPS, com expiração explícita. Não há tabela de sessões; o
+    cookie carrega apenas o que pode ser público, porque ele não é
+    criptografado.
+  - Escopo `identify` apenas. `email` não foi solicitado: o projeto não precisa,
+    e todo escopo a mais é dado pessoal sob responsabilidade do sistema.
+
+### Agente 4: Especialista em Pages Functions e Regras de Negócio
+
+- **Situação:** operou.
+- **Harness:** Claude (Cowork).
+- **Papel:** endpoints de publicar, listar, buscar e votar, com validação no
+  servidor.
+- **Fronteira:** `functions/api/publicacoes/`, `functions/_lib/categorias.js`.
+- **Skill utilizada:** [`skills/serverless-d1-discord/SKILL.md`](./skills/serverless-d1-discord/SKILL.md)
+- **Entregas realizadas:**
+  - `GET /api/publicacoes` — listagem ordenada por votos **no SQL**, com busca
+    por `?q=` e filtro por `?categoria=`. A busca usa `LIKE` com parâmetro
+    vinculado: a caixa de busca é texto do usuário indo direto para uma
+    consulta, e é o caminho óbvio de injeção neste projeto.
+  - `POST /api/publicacoes` — valida tamanho de título e conteúdo, tipo e
+    categoria. O autor vem da sessão; um campo `autor_id` enviado pelo cliente
+    é ignorado.
+  - `POST /api/publicacoes/:id/voto` — **não implementa** a regra de voto
+    único: captura a recusa do banco e traduz para `409 Conflict`. Se a regra
+    vivesse no código, como um "já votou?" seguido de `INSERT`, duas
+    requisições simultâneas poderiam passar as duas pela verificação antes de
+    qualquer uma gravar.
+
+### Agente 5: Agente de Teste, Validação e Auditoria (obrigatório pela rubrica)
+
+- **Situação:** operou.
+- **Harness:** Claude (Cowork), com navegador integrado para verificar o site
+  publicado; execução dos comandos pelo estudante.
+- **Papel:** verificação independente. **Não edita código de funcionalidade** —
+  relata, e quem corrige é o agente dono da pasta. Quem escreve não é quem
+  valida.
+- **Skill utilizada:** [`skills/teste-validacao/SKILL.md`](./skills/teste-validacao/SKILL.md)
+- **Entregas realizadas:** cinco validações registradas em
+  [`docs/validacao.md`](./docs/validacao.md), cada uma declarando o critério de
+  falha **antes** do resultado, e o que o teste não cobre:
+  - **V1** — restrição de voto único provada no banco: o segundo `INSERT`
+    falha com `UNIQUE constraint failed`.
+  - **V2** — deploy no Cloudflare e `d1Connected: true` em produção, com a
+    chave lida do HTML servido pelo servidor, não da aparência da tela.
+  - **V3** — login Discord completo em `localhost`, provado por
+    `/api/auth/eu`, não pelo redirect.
+  - **V4** — o mesmo login funcionando no endereço público.
+  - **V5** — voto duplo recusado com **409** chamando o endpoint **por fora da
+    interface**, e tentativa de forjar autoria enviando `autor_id: "999"` no
+    corpo, que foi ignorada.
+- **Observação metodológica:** os testes de regra de negócio foram executados
+  pelo console do navegador, chamando os endpoints diretamente. Testar clicando
+  num botão provaria apenas que a tela funciona, não que o servidor recusa
+  quem passa por fora dela.
+
+### Agente 6: Especialista em Interface Web Vanilla (HTML5, CSS3 e DOM)
+
+- **Situação:** **previsto** — ainda não operou. A interface publicada é, no
+  momento desta redação, o painel de diagnóstico gerado pelo `iniciar.mjs`.
+- **Harness previsto:** GitHub Copilot (VS Code) e/ou Claude (Cowork).
+- **Papel:** construir a interface consumindo os endpoints já prontos, usando
+  exclusivamente HTML5 semântico, CSS3 e JavaScript puro.
+- **Fronteira:** `public/`.
+- **Skill a utilizar:** [`skills/vanilla-dom-ui/SKILL.md`](./skills/vanilla-dom-ui/SKILL.md)
+- **Escopo definido:** formulário de submissão categorizado, listagem com busca
+  dinâmica, botão de copiar com `navigator.clipboard`, botão de votar, nome e
+  avatar do Discord no cabeçalho, e a Chave Única no rodapé.
+
+### Agente 7: Agente de Entrega e Auditoria da Rubrica
+
+- **Situação:** **previsto** — ainda não operou.
+- **Harness previsto:** Claude (Cowork).
+- **Papel:** conferir cada item da rubrica contra o que existe, rodar
+  `node validar-local.mjs P26-2B-273A-9914-8600-DE35`, manter o `README.md`
+  com a chave e a URL pública, e abrir o Pull Request final.
+- **Fronteira:** `README.md`, `LICENSE`, este arquivo.
+- **Skill a utilizar:** [`skills/teste-validacao/SKILL.md`](./skills/teste-validacao/SKILL.md)
+- **Atenção registrada:** o robô do repositório oficial faz *squash merge*
+  automático na abertura do Pull Request. Abrir o PR é entregar, não submeter
+  para revisão.
+
+---
+
+## 3. Fluxo de trabalho adotado
+
+Branch por frente de trabalho, com Pull Request interno para o `main` do fork,
+em vez de commits diretos na branch principal. Até aqui:
+`chore/estrutura-inicial`, `feat/esquema-d1` e `feat/api-publicacoes`.
+
+O `main` é o que o Cloudflare publica. Nada entra nele sem passar por um Pull
+Request, e o histórico fica auditável em
+[`/commits/main`](https://github.com/Guilherme-Tyszkouski/Avalia2026-2/commits/main).
+
+O Pull Request para `frankalcantara/Avalia2026-2` é **um só**, no fim, e toca
+exclusivamente a pasta `P26-2B-273A-9914-8600-DE35/`.
