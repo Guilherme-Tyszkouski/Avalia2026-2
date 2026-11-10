@@ -122,3 +122,170 @@ sem as tabelas.
   do scaffold, não uma sessão real.
 - Nenhuma funcionalidade do Projeto #19 foi implementada ainda: o que está no ar
   é o painel de diagnóstico gerado pelo `iniciar.mjs`.
+
+---
+
+## V3 — Login com Discord OAuth2 de ponta a ponta
+
+**Data:** 10/11/2026
+**Agente:** `auth-discord` implementou; `qa-validacao` verificou
+**Harness:** Claude (sistema de arquivos + navegador integrado para configurar
+o Discord Developer Portal); execução do servidor local pelo Guilherme
+**Ambiente:** `wrangler pages dev` em `http://localhost:8788`
+
+### Por que este teste existe
+
+O item 2 da rubrica exige login **exclusivo** via Discord OAuth2 importando
+`user_id`, nome e avatar. Chegar na tela inicial depois de autorizar não prova
+nada: o redirect pode acontecer sem que a sessão tenha sido criada. A prova é
+o servidor reconhecer a pessoa numa requisição seguinte.
+
+### O teste
+
+`GET /api/auth/eu` após completar o fluxo de autorização.
+
+**O que contaria como falha:** `{"autenticado": false}`, ou ausência de
+`avatarUrl` — que indicaria que o hash do avatar não foi convertido em URL.
+
+### Resultado observado
+
+```json
+{
+  "autenticado": true,
+  "userId": "6990363395421xxxxx",
+  "nome": "Guilherme Tyszkouski",
+  "avatarUrl": "https://cdn.discordapp.com/avatars/6990363395421xxxxx/cd741ffc...png?size=128"
+}
+```
+
+(identificador parcialmente omitido: o repositório é público)
+
+**Situação: aprovado.** Uma única resposta prova cinco etapas: validação do
+`state`, troca do `code` por `access_token`, segunda chamada a
+`GET /users/@me`, gravação em `discord_users` e leitura do cookie assinado.
+
+### Decisões de segurança verificadas no código
+
+- `state` aleatório gerado no início e conferido no retorno, contra CSRF de
+  login. A documentação do Discord o trata como opcional e recomendado.
+- Troca do código feita servidor-a-servidor; o Client Secret nunca chega ao
+  navegador.
+- Corpo da troca em `application/x-www-form-urlencoded` — a documentação do
+  Discord rejeita JSON nesse endpoint.
+- Escopo `identify` apenas. `email` não foi solicitado: o projeto não precisa,
+  e cada escopo a mais é dado pessoal sob nossa responsabilidade.
+- Cookie `HttpOnly`, `SameSite=Lax`, `Secure` em HTTPS, com expiração explícita.
+- Chave do usuário é o `id` do Discord, não o nome: `global_name` e `username`
+  mudam quando a pessoa troca o apelido, e a autoria dos resumos se perderia.
+- `/api/auth/sair` é POST, não GET: com GET, uma tag `<img>` em qualquer site
+  deslogaria quem visitasse a página.
+
+### O que este teste NÃO cobre
+
+- Produção: os segredos ainda não foram enviados ao Cloudflare Pages, então o
+  login só funciona em `localhost`. `GET /api/status` em produção continua
+  reportando `discordOAuthConfigured: false`.
+- Expiração da sessão após sete dias não foi testada.
+- A interface ainda mostra o perfil fictício do scaffold; ela não consome
+  `/api/auth/eu` ainda.
+
+---
+
+## V4 — Login com Discord em produção
+
+**Data:** 10/11/2026
+**Agente:** `qa-validacao`
+**URL:** https://p26-2b-273a-9914-8600-de35.pages.dev
+
+Segredos enviados ao Cloudflare Pages por stdin
+(`wrangler pages secret put`), de modo que os valores não passaram pela tela
+nem pela linha de comando. Eles só valem a partir do deploy seguinte, e foi
+por isso que este teste veio depois do merge.
+
+**O que contaria como falha:** `discordOAuthConfigured: false` em
+`/api/status`, ou `autenticado: false` em `/api/auth/eu` após autorizar.
+
+### Resultado
+
+`GET /api/status` → `"d1Connected": true, "discordOAuthConfigured": true`
+
+`GET /api/auth/eu` após login → `autenticado: true`, com nome e URL de avatar
+válida servida pelo CDN do Discord.
+
+**Situação: aprovado.** O fluxo funciona no endereço público, não apenas em
+`localhost` — distinção que importa porque o `validar-local.mjs` busca a URL
+do README e o corretor avalia o site no ar.
+
+### O que este teste NÃO cobre
+
+- Nenhuma funcionalidade do Projeto #19 ainda: publicar, buscar, copiar e
+  votar continuam por fazer.
+- A interface ainda é a do scaffold e mostra um perfil fictício; não consome
+  `/api/auth/eu`.
+
+---
+
+## V5 — Regras de negócio no servidor: voto único e autoria
+
+**Data:** 10/11/2026
+**Agente:** `api-functions` implementou; `qa-validacao` verificou
+**Harness:** Claude (sistema de arquivos); execução pelo Guilherme no console
+do navegador, chamando os endpoints **por fora da interface**
+
+### Por que estes testes existem
+
+O item 2 da rubrica exige validação das regras "no servidor, sem confiar apenas
+no cliente". Testar clicando num botão da tela não prova isso — prova apenas
+que a tela funciona. Estes testes chamam os endpoints diretamente, que é o que
+um usuário mal-intencionado faria.
+
+### Teste A — voto único no endpoint
+
+Primeiro voto em `POST /api/publicacoes/1/voto`:
+
+```json
+{"publicacaoId": 1, "totalVotos": 2}
+```
+
+Segundo voto, mesmo usuário, mesma publicação:
+
+```
+HTTP/1.1 409 Conflict
+{"erro": "Voce ja votou nesta publicacao."}
+```
+
+**O que contaria como falha:** o voto entrar de novo (regra ausente), ou vir
+`500` (o erro do banco vazando sem tratamento, dizendo "o servidor quebrou"
+quando na verdade ele funcionou como projetado).
+
+**Situação: aprovado.** Fecha a pendência registrada em V1, que havia provado
+a restrição apenas no nível do SQL.
+
+### Teste B — autoria não pode ser forjada
+
+`POST /api/publicacoes` com um campo `autor_id: "999"` enfiado no corpo, além
+dos campos legítimos. Resposta: `{"id": 2}`.
+
+Na listagem seguinte, a publicação 2 aparece com
+`autor: "Guilherme Tyszkouski"` e `souAutor: true`.
+
+**O que contaria como falha:** a publicação aparecer com autor `999`, ou com
+qualquer autor que não fosse o dono da sessão.
+
+**Situação: aprovado.** O campo foi silenciosamente ignorado: a autoria sai da
+sessão verificada, e não existe caminho no código em que um valor vindo do
+corpo chegue à coluna `autor_id`.
+
+### Observação sobre a arquitetura
+
+A Function de voto não implementa a regra — ela traduz a recusa do banco em
+`409`. Se a regra vivesse no código, como um "já votou?" seguido de `INSERT`,
+duas requisições simultâneas poderiam passar as duas pela verificação antes de
+qualquer uma gravar. Com a restrição no banco, a segunda falha sempre.
+
+### O que estes testes NÃO cobrem
+
+- Os endpoints ainda não foram exercitados em produção.
+- Limites de tamanho de título e conteúdo e categoria fora da lista foram
+  implementados mas não testados.
+- A interface ainda não consome nenhum destes endpoints.
