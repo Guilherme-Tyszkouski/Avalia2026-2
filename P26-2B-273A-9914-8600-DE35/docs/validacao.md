@@ -63,3 +63,62 @@ Evidência em imagem: [`validacao/v1-voto-unico.png`](./validacao/v1-voto-unico.
   responder 409, em vez de deixar vazar um 500.
 - Não testa o banco remoto, só o local. A migration ainda não foi aplicada em
   produção.
+
+---
+
+## V2 — Deploy online e conexão com o D1 de produção
+
+**Data:** 10/11/2026
+**Agente:** `qa-validacao`
+**Harness:** Claude (navegador integrado + sistema de arquivos)
+**URL:** https://p26-2b-273a-9914-8600-de35.pages.dev
+
+### Por que este teste existe
+
+O item 1 da rubrica é eliminatório: sem a aplicação no ar e funcionando, os
+outros 75 pontos não contam. Além disso, o `validar-local.mjs` busca a URL do
+README e confere se a chave aparece no HTML que voltou — ou seja, a verificação
+é automática e não aceita a palavra do aluno.
+
+### O que foi verificado
+
+**Chave no rodapé.** Lido do HTML servido pelo site publicado, não da
+aparência da tela:
+
+```
+Chave Única de Auditoria: P26-2B-273A-9914-8600-DE35 · Turma 2B · Licenciado sob MIT
+```
+
+**O que contaria como falha:** a chave estar apenas no arquivo local e não na
+resposta do servidor.
+
+**Banco em produção.** `GET /api/status` respondeu:
+
+```json
+{"ok":true,"chave":"P26-2B-273A-9914-8600-DE35","projectId":19,
+ "d1Connected":true,"discordOAuthConfigured":false,"totalRegistros":0}
+```
+
+**O que contaria como falha:** `d1Connected: false`, que indicaria binding
+ausente — o erro clássico de aplicar as migrations só no banco local e publicar
+sem as tabelas.
+
+**Situação: aprovado** nos dois pontos.
+
+### Configuração registrada
+
+- Projeto Pages: `p26-2b-273a-9914-8600-de35`
+- Production branch: `main`
+- Root directory: `P26-2B-273A-9914-8600-DE35`
+- Build output directory: `public`
+- Build command: vazio
+- Banco D1 `db-p26-2b-273a-9914-8600-de35`, binding `DB`, migrations 0001 e
+  0002 aplicadas em `--local` e `--remote`
+
+### O que este teste NÃO cobre
+
+- `discordOAuthConfigured: false` — o login do Discord ainda não existe. O
+  perfil "Discord: Guilherme (discord_de35)" que aparece na tela é o placeholder
+  do scaffold, não uma sessão real.
+- Nenhuma funcionalidade do Projeto #19 foi implementada ainda: o que está no ar
+  é o painel de diagnóstico gerado pelo `iniciar.mjs`.
