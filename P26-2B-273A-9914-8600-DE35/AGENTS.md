@@ -48,7 +48,7 @@ regra do próprio projeto, documentada na seção de regras comuns.
 
 ---
 
-## 2. Agentes Criados e Responsabilidades
+## 2. Agentes Criados e Responsabilidades (Mínimo de 3 Agentes)
 
 ### Agente 1: Arquiteto de Dados e Contrato da API
 
@@ -57,8 +57,8 @@ regra do próprio projeto, documentada na seção de regras comuns.
 - **Papel:** definir o modelo relacional e o formato das respostas da API, e
   registrar as decisões com as alternativas consideradas. Não escreve código de
   funcionalidade.
-- **Skill utilizada:** [`skills/arquitetura-contrato/SKILL.md`](./skills/arquitetura-contrato/SKILL.md)
-- **Entregas realizadas:**
+- **Skill Utilizada:** [`skills/arquitetura-contrato/SKILL.md`](./skills/arquitetura-contrato/SKILL.md)
+- **Entregas Realizadas:**
   - Modelo com `publicacoes` e `votos`, apoiado na tabela `discord_users` que
     já existia, tendo o `user_id` do Discord como chave — e não o nome, que
     muda quando a pessoa troca o apelido e levaria a autoria junto.
@@ -79,8 +79,8 @@ regra do próprio projeto, documentada na seção de regras comuns.
 - **Papel:** esquema relacional, migrations numeradas e forward-only, e as
   restrições que carregam as regras do enunciado.
 - **Fronteira:** `migrations/`.
-- **Skill utilizada:** [`skills/serverless-d1-discord/SKILL.md`](./skills/serverless-d1-discord/SKILL.md)
-- **Entregas realizadas:**
+- **Skill Utilizada:** [`skills/serverless-d1-discord/SKILL.md`](./skills/serverless-d1-discord/SKILL.md)
+- **Entregas Realizadas:**
   - `migrations/0002_resumos_snippets.sql` com `publicacoes`, `votos` e a view
     `publicacoes_com_votos`, usada pela listagem para não repetir o `JOIN` em
     cada endpoint.
@@ -98,8 +98,8 @@ regra do próprio projeto, documentada na seção de regras comuns.
   o Discord Developer Portal.
 - **Papel:** fluxo OAuth2 completo e gestão de sessão.
 - **Fronteira:** `functions/api/auth/`, `functions/_lib/sessao.js`.
-- **Skill utilizada:** [`skills/discord-oauth2/SKILL.md`](./skills/discord-oauth2/SKILL.md)
-- **Entregas realizadas:**
+- **Skill Utilizada:** [`skills/discord-oauth2/SKILL.md`](./skills/discord-oauth2/SKILL.md)
+- **Entregas Realizadas:**
   - `GET /api/auth/discord` — monta a autorização com `state` aleatório contra
     CSRF de login.
   - `GET /api/auth/discord/callback` — confere o `state`, troca o código por
@@ -122,8 +122,8 @@ regra do próprio projeto, documentada na seção de regras comuns.
 - **Papel:** endpoints de publicar, listar, buscar e votar, com validação no
   servidor.
 - **Fronteira:** `functions/api/publicacoes/`, `functions/_lib/categorias.js`.
-- **Skill utilizada:** [`skills/serverless-d1-discord/SKILL.md`](./skills/serverless-d1-discord/SKILL.md)
-- **Entregas realizadas:**
+- **Skill Utilizada:** [`skills/serverless-d1-discord/SKILL.md`](./skills/serverless-d1-discord/SKILL.md)
+- **Entregas Realizadas:**
   - `GET /api/publicacoes` — listagem ordenada por votos **no SQL**, com busca
     por `?q=` e filtro por `?categoria=`. A busca usa `LIKE` com parâmetro
     vinculado: a caixa de busca é texto do usuário indo direto para uma
@@ -145,8 +145,8 @@ regra do próprio projeto, documentada na seção de regras comuns.
 - **Papel:** verificação independente. **Não edita código de funcionalidade** —
   relata, e quem corrige é o agente dono da pasta. Quem escreve não é quem
   valida.
-- **Skill utilizada:** [`skills/teste-validacao/SKILL.md`](./skills/teste-validacao/SKILL.md)
-- **Entregas realizadas:** cinco validações registradas em
+- **Skill Utilizada:** [`skills/teste-validacao/SKILL.md`](./skills/teste-validacao/SKILL.md)
+- **Entregas Realizadas:** cinco validações registradas em
   [`docs/validacao.md`](./docs/validacao.md), cada uma declarando o critério de
   falha **antes** do resultado, e o que o teste não cobre:
   - **V1** — restrição de voto único provada no banco: o segundo `INSERT`
