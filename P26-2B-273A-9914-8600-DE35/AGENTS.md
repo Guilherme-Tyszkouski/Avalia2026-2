@@ -216,7 +216,9 @@ regra do próprio projeto, documentada na seção de regras comuns.
     fora de `P26-2B-273A-9914-8600-DE35/` foi tocado;
   - `node validar-local.mjs P26-2B-273A-9914-8600-DE35` executado na raiz do
     fork: **9 de 9** itens estruturais aprovados;
-  - Pull Request final para `frankalcantara/Avalia2026-2`, que é a entrega.
+  - Pull Request final para `frankalcantara/Avalia2026-2`: PR #45, aberto e
+    registrado pelo robô do repositório, com os cinco pré-requisitos técnicos
+    marcados como OK no diagnóstico automático.
 - **Ressalva que este agente fez questão de registrar:** o 9/9 do validador
   **não** é prova de que o projeto funciona. Ele confere presença, não
   substância: "Frontend Vanilla" passa porque existe um `.html` sem framework
@@ -225,10 +227,26 @@ regra do próprio projeto, documentada na seção de regras comuns.
   enquanto o endereço público ainda servia o painel de diagnóstico do
   scaffold. A prova de funcionalidade são as sete validações em
   [`docs/validacao.md`](./docs/validacao.md), não este relatório.
-- **Atenção registrada:** o robô do repositório oficial faz *squash merge*
-  automático na abertura do Pull Request. Abrir o PR é entregar, não submeter
-  para revisão. Por isso o PR final foi deixado para depois de V7, a bateria
-  em produção.
+- **Hipótese que este agente levantou e que estava errada:** durante todo o
+  projeto, trabalhamos sob a premissa de que o robô do repositório oficial
+  faria *squash merge* automático na abertura do Pull Request — ou seja, que
+  abrir o PR seria entregar, sem volta. A premissa veio da leitura de
+  `.github/scripts/avaliar-pr.mjs`, onde a chamada de merge foi interpretada
+  como se rodasse na abertura.
+
+  Ela custou uma decisão de projeto: o PR final foi deixado para depois da
+  bateria V7 em produção, porque não haveria segunda chance.
+
+  Ao abrir o PR, o robô respondeu que ele **permanece aberto**, que cada
+  `git push` o atualiza sozinho, e que a avaliação e o merge oficial são
+  feitos manualmente pelo professor a partir de 20/11/2026.
+
+  Fica registrado em vez de apagado, porque é o tipo de erro que vale
+  documentar: uma premissa lida de código, nunca confirmada contra o
+  comportamento real, que guiou o planejamento até ser contrariada pelo
+  próprio sistema. A ordem em que as coisas foram feitas continua defensável
+  — entregar depois de validar em produção é melhor de qualquer forma —, mas
+  ela foi escolhida pelo motivo errado.
 
 ---
 
