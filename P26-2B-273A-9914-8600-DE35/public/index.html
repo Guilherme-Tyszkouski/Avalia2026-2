@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resumos e Snippets da Turma 2B</title>
-  <meta name="description" content="Biblioteca colaborativa de resumos teoricos e trechos de codigo da turma 2B.">
+  <meta name="description" content="Biblioteca colaborativa de resumos teóricos e trechos de código da turma 2B.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -45,7 +45,7 @@
       <h2 id="titulo-form">Publicar</h2>
 
       <p id="aviso-login" class="aviso oculto">
-        Entre com o Discord para publicar e votar. A leitura e livre.
+        Entre com o Discord para publicar e votar. A leitura é livre.
       </p>
 
       <form id="form-publicacao" class="form">
@@ -59,7 +59,7 @@
           </div>
 
           <div class="campo">
-            <label for="campo-categoria">Linguagem ou materia</label>
+            <label for="campo-categoria">Linguagem ou matéria</label>
             <!-- As opcoes vem do servidor: a lista de categorias e definida em
                  functions/_lib/categorias.js e devolvida pelo GET. Repetir a
                  lista aqui criaria dois lugares para manter em sincronia. -->
@@ -68,15 +68,15 @@
         </div>
 
         <div class="campo">
-          <label for="campo-titulo">Titulo</label>
+          <label for="campo-titulo">Título</label>
           <input id="campo-titulo" name="titulo" type="text" maxlength="120"
-                 placeholder="Ex.: Diferenca entre let, const e var" required>
+                 placeholder="Ex.: Diferença entre let, const e var" required>
         </div>
 
         <div class="campo">
-          <label for="campo-conteudo">Conteudo</label>
+          <label for="campo-conteudo">Conteúdo</label>
           <textarea id="campo-conteudo" name="conteudo" rows="8" maxlength="5000"
-                    placeholder="Cole aqui o resumo ou o trecho de codigo." required></textarea>
+                    placeholder="Cole aqui o resumo ou o trecho de código." required></textarea>
           <p class="campo__dica"><span id="contador">0</span>/5000</p>
         </div>
 
@@ -95,7 +95,7 @@
         <div class="campo campo--cresce">
           <label for="campo-busca">Buscar</label>
           <input id="campo-busca" type="search" autocomplete="off"
-                 placeholder="Titulo, conteudo ou categoria">
+                 placeholder="Título, conteúdo ou categoria">
         </div>
 
         <div class="campo">
@@ -106,7 +106,7 @@
         </div>
       </div>
 
-      <p id="lista-estado" class="mensagem" role="status" aria-live="polite">Carregando...</p>
+      <p id="lista-estado" class="mensagem" role="status" aria-live="polite">Carregando…</p>
 
       <!-- As publicacoes chegam aqui, ordenadas pelo servidor. -->
       <ul id="lista" class="lista"></ul>
@@ -115,9 +115,9 @@
   </main>
 
   <footer class="rodape">
-    <p>Projeto #19 — Repositorio de Resumos e Snippets da Turma</p>
+    <p>Projeto #19 — Repositório de Resumos e Snippets da Turma</p>
     <p>Guilherme Tyszkouski · RA 2025207312 · Turma 2B</p>
-    <p class="rodape__chave">Chave Unica: <code>P26-2B-273A-9914-8600-DE35</code></p>
+    <p class="rodape__chave">Chave Única: <code>P26-2B-273A-9914-8600-DE35</code></p>
   </footer>
 
   <script src="app.js"></script>

@@ -117,7 +117,7 @@ export async function onRequestPost({ request, env }) {
   try {
     corpo = await request.json();
   } catch {
-    return Response.json({ erro: "Corpo invalido." }, { status: 400 });
+    return Response.json({ erro: "Corpo inválido." }, { status: 400 });
   }
 
   const titulo = String(corpo?.titulo ?? "").trim();
@@ -130,10 +130,10 @@ export async function onRequestPost({ request, env }) {
   // corpo da requisicao, e quem recusa e este bloco.
   const erros = [];
   if (titulo.length < 3 || titulo.length > TITULO_MAXIMO) {
-    erros.push(`titulo deve ter de 3 a ${TITULO_MAXIMO} caracteres`);
+    erros.push(`título deve ter de 3 a ${TITULO_MAXIMO} caracteres`);
   }
   if (conteudo.length < 1 || conteudo.length > CONTEUDO_MAXIMO) {
-    erros.push(`conteudo deve ter de 1 a ${CONTEUDO_MAXIMO} caracteres`);
+    erros.push(`conteúdo deve ter de 1 a ${CONTEUDO_MAXIMO} caracteres`);
   }
   if (!tipoValido(tipo)) erros.push("tipo deve ser 'resumo' ou 'snippet'");
   if (!categoriaValida(categoria)) erros.push("categoria fora da lista permitida");

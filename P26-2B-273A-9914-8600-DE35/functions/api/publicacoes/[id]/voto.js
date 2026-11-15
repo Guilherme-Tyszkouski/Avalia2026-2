@@ -24,14 +24,14 @@ export async function onRequestPost({ request, env, params }) {
 
   const publicacaoId = Number(params.id);
   if (!Number.isInteger(publicacaoId) || publicacaoId <= 0) {
-    return Response.json({ erro: "Publicacao invalida." }, { status: 400 });
+    return Response.json({ erro: "Publicação inválida." }, { status: 400 });
   }
 
   const publicacao = await env.DB.prepare("SELECT id FROM publicacoes WHERE id = ?")
     .bind(publicacaoId)
     .first();
   if (!publicacao) {
-    return Response.json({ erro: "Publicacao nao encontrada." }, { status: 404 });
+    return Response.json({ erro: "Publicação não encontrada." }, { status: 404 });
   }
 
   try {
@@ -44,7 +44,7 @@ export async function onRequestPost({ request, env, params }) {
     // e aqui o servidor funcionou exatamente como projetado.
     const mensagem = String(erro?.message || "");
     if (/UNIQUE constraint failed/i.test(mensagem)) {
-      return Response.json({ erro: "Voce ja votou nesta publicacao." }, { status: 409 });
+      return Response.json({ erro: "Você já votou nesta publicação." }, { status: 409 });
     }
     throw erro;
   }

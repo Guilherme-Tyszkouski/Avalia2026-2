@@ -97,7 +97,7 @@
     if (autenticado) {
       perfilNome.textContent = dados.nome || "";
       perfilAvatar.src = dados.avatarUrl || "";
-      perfilAvatar.alt = `Avatar de ${dados.nome || "usuario"}`;
+      perfilAvatar.alt = `Avatar de ${dados.nome || "usuário"}`;
     }
 
     // Formulario desabilitado para quem nao entrou. O servidor responderia 401
@@ -179,7 +179,7 @@
         const rotulo = botao.querySelector(".voto__rotulo");
         if (rotulo) rotulo.textContent = dados.totalVotos === 1 ? "voto" : "votos";
         botao.classList.add("voto--votado");
-        botao.title = "Voce ja votou nesta publicacao";
+        botao.title = "Você já votou nesta publicação";
         return;
       }
 
@@ -188,7 +188,7 @@
       // so se corrige.
       if (resposta.status === 409) {
         botao.classList.add("voto--votado");
-        botao.title = "Voce ja votou nesta publicacao";
+        botao.title = "Você já votou nesta publicação";
         return;
       }
 
@@ -198,10 +198,10 @@
         return;
       }
 
-      mensagem(listaEstado, dados.erro || "Nao foi possivel votar.", "erro");
+      mensagem(listaEstado, dados.erro || "Não foi possível votar.", "erro");
       botao.disabled = false;
     } catch {
-      mensagem(listaEstado, "Sem conexao com o servidor.", "erro");
+      mensagem(listaEstado, "Sem conexão com o servidor.", "erro");
       botao.disabled = false;
     }
   }
@@ -270,7 +270,7 @@
 
     const nome = document.createElement("span");
     nome.textContent = publicacao.souAutor
-      ? `${publicacao.autor.nome} (voce)`
+      ? `${publicacao.autor.nome} (você)`
       : publicacao.autor.nome;
     autor.appendChild(nome);
     item.appendChild(autor);
@@ -308,7 +308,7 @@
     // continua sendo a restricao UNIQUE no banco, nao este atributo.
     if (publicacao.jaVotei) {
       botaoVoto.disabled = true;
-      botaoVoto.title = "Voce ja votou nesta publicacao";
+      botaoVoto.title = "Você já votou nesta publicação";
     } else if (!autenticado) {
       botaoVoto.disabled = true;
       botaoVoto.title = "Entre com o Discord para votar";
@@ -333,11 +333,11 @@
     lista.replaceChildren();
 
     if (!publicacoes.length) {
-      mensagem(listaEstado, "Nenhuma publicacao encontrada.");
+      mensagem(listaEstado, "Nenhuma publicação encontrada.");
       return;
     }
 
-    const rotulo = publicacoes.length === 1 ? "publicacao" : "publicacoes";
+    const rotulo = publicacoes.length === 1 ? "publicação" : "publicações";
     mensagem(listaEstado, `${publicacoes.length} ${rotulo}.`);
 
     // Nada de .sort() aqui: a ordem por votos vem pronta do SQL. Reordenar no
@@ -358,7 +358,7 @@
     if (filtroCategoria.value) parametros.set("categoria", filtroCategoria.value);
 
     const consulta = parametros.toString();
-    mensagem(listaEstado, "Carregando...");
+    mensagem(listaEstado, "Carregando…");
 
     try {
       const resposta = await fetch(`/api/publicacoes${consulta ? `?${consulta}` : ""}`, {
@@ -369,7 +369,7 @@
       if (meuPedido !== pedidoAtual) return;
 
       if (!resposta.ok) {
-        mensagem(listaEstado, "Nao foi possivel carregar a biblioteca.", "erro");
+        mensagem(listaEstado, "Não foi possível carregar a biblioteca.", "erro");
         return;
       }
 
@@ -378,7 +378,7 @@
       desenharLista(dados.publicacoes || []);
     } catch {
       if (meuPedido !== pedidoAtual) return;
-      mensagem(listaEstado, "Sem conexao com o servidor.", "erro");
+      mensagem(listaEstado, "Sem conexão com o servidor.", "erro");
     }
   }
 
@@ -397,7 +397,7 @@
     if (!autenticado) return;
 
     botaoPublicar.disabled = true;
-    mensagem(formMensagem, "Publicando...");
+    mensagem(formMensagem, "Publicando…");
 
     try {
       const resposta = await fetch("/api/publicacoes", {
@@ -421,13 +421,13 @@
         mensagem(formMensagem, "Publicado.", "sucesso");
         await carregarLista();
       } else if (resposta.status === 401) {
-        mensagem(formMensagem, "Sua sessao expirou. Entre de novo.", "erro");
+        mensagem(formMensagem, "Sua sessão expirou. Entre de novo.", "erro");
         await carregarSessao();
       } else {
-        mensagem(formMensagem, dados.erro || "Nao foi possivel publicar.", "erro");
+        mensagem(formMensagem, dados.erro || "Não foi possível publicar.", "erro");
       }
     } catch {
-      mensagem(formMensagem, "Sem conexao com o servidor.", "erro");
+      mensagem(formMensagem, "Sem conexão com o servidor.", "erro");
     } finally {
       botaoPublicar.disabled = !autenticado;
     }
