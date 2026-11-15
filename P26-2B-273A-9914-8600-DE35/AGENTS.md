@@ -159,6 +159,12 @@ regra do próprio projeto, documentada na seção de regras comuns.
   - **V5** — voto duplo recusado com **409** chamando o endpoint **por fora da
     interface**, e tentativa de forjar autoria enviando `autor_id: "999"` no
     corpo, que foi ignorada.
+  - **V6** — a interface inteira exercitada em `localhost`: sessão refletida no
+    cabeçalho, publicação, ordenação vinda do SQL, busca dinâmica, voto e
+    cópia. Dois defeitos de texto encontrados e corrigidos na própria bateria.
+  - **V7** — a mesma bateria repetida no endereço público, contra o banco de
+    produção, incluindo uma sondagem de injeção de SQL (`' OR 1=1 --`), que
+    devolveu zero resultados em vez da tabela inteira.
 - **Observação metodológica:** os testes de regra de negócio foram executados
   pelo console do navegador, chamando os endpoints diretamente. Testar clicando
   num botão provaria apenas que a tela funciona, não que o servidor recusa
@@ -166,29 +172,63 @@ regra do próprio projeto, documentada na seção de regras comuns.
 
 ### Agente 6: Especialista em Interface Web Vanilla (HTML5, CSS3 e DOM)
 
-- **Situação:** **previsto** — ainda não operou. A interface publicada é, no
-  momento desta redação, o painel de diagnóstico gerado pelo `iniciar.mjs`.
-- **Harness previsto:** GitHub Copilot (VS Code) e/ou Claude (Cowork).
+- **Situação:** operou.
+- **Harness:** Claude (Cowork), com navegador integrado apontado para o
+  servidor local e depois para o endereço público; execução dos comandos pelo
+  estudante.
 - **Papel:** construir a interface consumindo os endpoints já prontos, usando
   exclusivamente HTML5 semântico, CSS3 e JavaScript puro.
 - **Fronteira:** `public/`.
-- **Skill a utilizar:** [`skills/vanilla-dom-ui/SKILL.md`](./skills/vanilla-dom-ui/SKILL.md)
-- **Escopo definido:** formulário de submissão categorizado, listagem com busca
-  dinâmica, botão de copiar com `navigator.clipboard`, botão de votar, nome e
-  avatar do Discord no cabeçalho, e a Chave Única no rodapé.
+- **Skill Utilizada:** [`skills/vanilla-dom-ui/SKILL.md`](./skills/vanilla-dom-ui/SKILL.md)
+- **Entregas Realizadas:** `public/index.html`, `public/styles.css` e
+  `public/app.js`, substituindo o painel de diagnóstico do scaffold:
+  formulário de submissão categorizado por linguagem ou matéria, listagem
+  ordenada pelos mais votados, busca dinâmica, botão de copiar com
+  `navigator.clipboard`, botão de votar refletindo se o usuário já votou, nome
+  e avatar do Discord no cabeçalho, e a Chave Única no rodapé.
+- **Decisões que este agente defendeu:**
+  - conteúdo de terceiros entra na tela por `textContent` e `createElement`,
+    nunca por `innerHTML` — o texto foi escrito por outro estudante, e
+    concatenar HTML abriria XSS armazenado;
+  - nenhuma regra de negócio foi trazida para o cliente: não há `.sort()` nem
+    filtro em memória, e o estado "já votei" vem do banco, por isso sobrevive
+    ao recarregamento;
+  - a busca numera os pedidos e descarta resposta atrasada, porque debounce
+    sozinho não impede que a resposta de uma consulta antiga chegue depois e
+    sobrescreva a tela.
+- **Limite respeitado:** este agente não alterou nenhum arquivo em
+  `functions/`. Quando precisou de um dado que a API não devolvia, a mudança
+  foi pedida ao Agente 4, não feita por ele.
 
 ### Agente 7: Agente de Entrega e Auditoria da Rubrica
 
-- **Situação:** **previsto** — ainda não operou.
-- **Harness previsto:** Claude (Cowork).
+- **Situação:** operou.
+- **Harness:** Claude (Cowork); execução dos comandos pelo estudante.
 - **Papel:** conferir cada item da rubrica contra o que existe, rodar
   `node validar-local.mjs P26-2B-273A-9914-8600-DE35`, manter o `README.md`
   com a chave e a URL pública, e abrir o Pull Request final.
 - **Fronteira:** `README.md`, `LICENSE`, este arquivo.
-- **Skill a utilizar:** [`skills/teste-validacao/SKILL.md`](./skills/teste-validacao/SKILL.md)
+- **Skill Utilizada:** [`skills/teste-validacao/SKILL.md`](./skills/teste-validacao/SKILL.md)
+- **Entregas Realizadas:**
+  - checklist da rubrica mantido item a item, com o estado de cada um e o que
+    faltava para fechá-lo;
+  - auditoria de isolamento por `git diff --name-only`, confirmando que nada
+    fora de `P26-2B-273A-9914-8600-DE35/` foi tocado;
+  - `node validar-local.mjs P26-2B-273A-9914-8600-DE35` executado na raiz do
+    fork: **9 de 9** itens estruturais aprovados;
+  - Pull Request final para `frankalcantara/Avalia2026-2`, que é a entrega.
+- **Ressalva que este agente fez questão de registrar:** o 9/9 do validador
+  **não** é prova de que o projeto funciona. Ele confere presença, não
+  substância: "Frontend Vanilla" passa porque existe um `.html` sem framework
+  proibido, e "Deploy Online" passa porque a URL respondeu 200 com a chave no
+  HTML. Houve um momento neste projeto em que o validador já devolvia 9/9
+  enquanto o endereço público ainda servia o painel de diagnóstico do
+  scaffold. A prova de funcionalidade são as sete validações em
+  [`docs/validacao.md`](./docs/validacao.md), não este relatório.
 - **Atenção registrada:** o robô do repositório oficial faz *squash merge*
   automático na abertura do Pull Request. Abrir o PR é entregar, não submeter
-  para revisão.
+  para revisão. Por isso o PR final foi deixado para depois de V7, a bateria
+  em produção.
 
 ---
 
@@ -196,7 +236,15 @@ regra do próprio projeto, documentada na seção de regras comuns.
 
 Branch por frente de trabalho, com Pull Request interno para o `main` do fork,
 em vez de commits diretos na branch principal. Até aqui:
-`chore/estrutura-inicial`, `feat/esquema-d1` e `feat/api-publicacoes`.
+`chore/estrutura-inicial`, `feat/esquema-d1`, `feat/api-publicacoes`,
+`docs/agentes`, `feat/interface` e `fix/acentos`.
+
+Uma correção de processo vale registro: a documentação dos agentes acabou
+commitada dentro da branch `feat/api-publicacoes`, cujo nome não diz nada
+sobre documentação. Em vez de abrir o Pull Request assim, os arquivos foram
+levados para uma branch `docs/agentes` criada a partir do `main` atualizado.
+Histórico em que o nome da branch mente sobre o conteúdo custa caro depois,
+quando alguém procura quando uma decisão entrou.
 
 O `main` é o que o Cloudflare publica. Nada entra nele sem passar por um Pull
 Request, e o histórico fica auditável em

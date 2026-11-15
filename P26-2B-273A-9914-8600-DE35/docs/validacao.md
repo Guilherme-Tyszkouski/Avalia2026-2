@@ -401,3 +401,115 @@ Registrados aqui porque uma validação que só lista acertos não é validaçã
   a defesa existe no código, que monta tudo por `textContent` e nunca por
   `innerHTML`, mas não há prova registrada.
 - Não foi testado o comportamento com a sessão expirando no meio do uso.
+
+---
+
+## V7 — A aplicação inteira no endereço público
+
+**Quando:** 15/11/2026, após o merge de `feat/interface` e `fix/acentos` no
+`main`, com o deploy automático do Cloudflare Pages concluído.
+
+**Onde:** `https://p26-2b-273a-9914-8600-de35.pages.dev`, banco D1 de produção.
+
+**Agente responsável:** Agente 7 (Teste e Validação).
+
+**Harness:** navegador integrado do Claude para as verificações automatizáveis,
+e o Chrome do autor para as que exigem gesto humano.
+
+**Por que esta entrada existe:** V6 provou a interface em `localhost`, contra o
+banco local. Um projeto que só funciona na máquina de quem escreveu não está
+entregue. Esta entrada repete a bateria no endereço que o avaliador vai abrir.
+
+### Teste A — login em produção
+
+`GET /api/auth/eu` no endereço público: `autenticado: true`, nome
+`Guilherme Tyszkouski`, URL de avatar presente, e o cabeçalho da página
+mostrando os dois.
+
+**O que contaria como falha:** `autenticado: false` depois de um login
+aparentemente bem-sucedido — o caso em que o redirect acontece mas o cookie
+não é gravado, ou é gravado com domínio errado.
+
+**Situação: aprovado.**
+
+### Teste B — publicação em produção
+
+Seis publicações criadas pelo endpoint, todas com resposta `201` e id
+sequencial de 1 a 6. O banco de produção estava vazio até então.
+
+**O que contaria como falha:** `500` por tabela ausente — o caso em que as
+migrations foram aplicadas apenas em `--local` e esquecidas em `--remote`.
+
+**Situação: aprovado.**
+
+### Teste C — busca em produção, e uma sondagem de injeção
+
+| Consulta | Resultado |
+|---|---|
+| sem filtro | 6 publicações |
+| `?q=ponteiro` | 1 — casou pelo título |
+| `?q=COUNT` | 1 — casou pelo conteúdo, texto que só existe dentro do código |
+| `?categoria=Redes` | 1 |
+| `?q=' OR 1=1 --` | **0** |
+
+A última linha é o ponto. Buscar literalmente `' OR 1=1 --` devolveu zero
+resultados, não seis. Se o termo fosse concatenado na consulta, aquilo teria
+encerrado a string e tornado a condição sempre verdadeira, trazendo a tabela
+inteira. Zero é a resposta de quem procurou esse texto dentro dos títulos e
+não o encontrou — que é o comportamento de um parâmetro vinculado.
+
+**O que contaria como falha:** essa consulta devolver qualquer resultado.
+
+**Situação: aprovado.** Vale registrar o limite: isto é uma sondagem de um
+caso, não uma auditoria de segurança.
+
+### Teste D — voto, ordenação e voto repetido em produção
+
+Três votos dados pela interface, pelo autor, em três publicações distintas. A
+listagem seguinte veio com as três votadas (1 voto cada) antes das três não
+votadas (0 votos).
+
+Tentativa de votar de novo em uma já votada, chamando o endpoint por fora da
+tela:
+
+```
+409  {"erro": "Você já votou nesta publicação."}
+```
+
+**O que contaria como falha:** o segundo voto entrar, ou a ordenação não
+refletir os votos depois de recarregar a página.
+
+**Situação: aprovado.**
+
+### Teste E — copiar em produção, e uma recusa que valeu a pena
+
+Clique humano em "Copiar", no Chrome: o conteúdo da publicação foi para a área
+de transferência e colou íntegro, com acentos.
+
+Antes disso, o mesmo clique no navegador integrado **falhou**. A investigação
+mostrou `navigator.permissions.query({name: "clipboard-write"})` devolvendo
+`denied` naquele navegador, e a escrita falhando com `NotAllowedError`. Não é
+defeito da aplicação: aquele navegador embutido não concede a permissão para
+origens HTTPS comuns, enquanto `localhost` é tratado de forma permissiva por
+padrão — o que explica V6 ter passado e esta tentativa não.
+
+O caminho de erro se comportou como projetado: a página trocou o rótulo para
+"Selecione e copie" e selecionou o texto, em vez de não fazer nada.
+
+**O que contaria como falha:** o botão ficar inerte quando a API é recusada.
+
+**Situação: aprovado**, com a observação de que a cópia depende de uma
+permissão do navegador de quem usa, e por isso o plano B existe.
+
+### O que esta bateria NÃO cobre
+
+- Um segundo usuário. Tudo foi exercitado com uma conta só, então o caso de
+  duas pessoas votando na mesma publicação só foi provado em `localhost`
+  (V1 e V5), nunca em produção.
+- Concorrência real: dois votos simultâneos. O argumento de que a restrição no
+  banco resolve isso é estrutural, não medido.
+- Conteúdo malicioso submetido de verdade (`<script>` dentro de um resumo). A
+  defesa está no código, que monta tudo por `textContent`, mas não há prova
+  registrada.
+- Celular e leitor de tela.
+- Comportamento quando a sessão expira com a página aberta.
