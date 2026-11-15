@@ -289,3 +289,115 @@ qualquer uma gravar. Com a restrição no banco, a segunda falha sempre.
 - Limites de tamanho de título e conteúdo e categoria fora da lista foram
   implementados mas não testados.
 - A interface ainda não consome nenhum destes endpoints.
+
+---
+
+## V6 — Interface consumindo os endpoints, em ambiente local
+
+**Quando:** 15/11/2026, servidor `wrangler pages dev` em `localhost:8788`,
+branch `feat/interface`.
+
+**Agente responsável:** Agente 6 (Interface Vanilla), com o Agente 7 (Teste e
+Validação) conduzindo os testes.
+
+**Harness:** navegador integrado do Claude, apontado para o servidor local da
+máquina do autor. Isso permitiu ler o DOM e o estado dos botões diretamente,
+em vez de julgar por captura de tela.
+
+**O que esta entrada prova:** que a interface em HTML5, CSS3 e JavaScript puro
+exercita, pela tela, as mesmas regras que V5 provou por chamada direta.
+
+### Teste A — sessão refletida no cabeçalho e no formulário
+
+Página aberta sem sessão: aparece o botão "Entrar com Discord", o aviso de
+login, e os campos do formulário chegam desabilitados. Depois do login pelo
+Discord: o botão some, aparecem avatar e nome vindos de `/api/auth/eu`, e os
+campos ficam habilitados.
+
+**O que contaria como falha:** o formulário nascer habilitado para quem não
+entrou, ou o nome e o avatar virem de algo guardado no navegador em vez de uma
+resposta do servidor.
+
+**Situação: aprovado.**
+
+### Teste B — publicação e listagem ordenada
+
+Publicado um snippet de categoria SQL. Resposta `201`, formulário limpo,
+mensagem "Publicado.". Depois de recarregar a página, a lista voltou do
+servidor com três publicações, na ordem **2, 1 e 0 votos**.
+
+**O que contaria como falha:** a lista aparecer em ordem de criação, ou a
+ordem só existir até o primeiro recarregamento — sinal de que estaria sendo
+feita no JavaScript e não no SQL.
+
+**Situação: aprovado.** Não existe `.sort()` no cliente; a ordem é a do
+`ORDER BY total_votos DESC` da consulta.
+
+### Teste C — busca dinâmica
+
+Digitado `join` na caixa de busca, sem apertar nada. A listagem passou de três
+para uma publicação, a que contém `LEFT JOIN` no título e no conteúdo.
+
+**O que contaria como falha:** a filtragem acontecer no array já carregado no
+navegador. Isso pareceria igual nesta escala e quebraria na primeira
+paginação, além de nunca encontrar o que não tivesse sido baixado.
+
+**Situação: aprovado.** O termo vai como `?q=` e é aplicado no SQL com
+parâmetro vinculado.
+
+### Teste D — voto pela interface e estado após recarregar
+
+Clique no botão de voto: contador foi de 0 para 1 e o botão ficou verde e
+desabilitado. Recarregando a página, ele **voltou já nesse estado**, porque o
+`jaVotei` vem da consulta ao banco.
+
+Em seguida, com a sessão já tendo votado, uma chamada direta ao endpoint a
+partir do console da própria página devolveu:
+
+```
+409  {"erro": "Voce ja votou nesta publicacao."}
+```
+
+**O que contaria como falha:** o estado "já votei" existir apenas na memória
+da página, sumindo ao recarregar — o que indicaria que o voto único estaria
+sendo controlado pela tela e não pelo banco.
+
+**Situação: aprovado.** O botão desabilitado é conveniência; quem recusa o
+segundo voto é a restrição `UNIQUE (publicacao_id, usuario_id)`.
+
+### Teste E — copiar para a área de transferência
+
+Clique no botão "Copiar" de um snippet, feito por uma pessoa, seguido de colar
+em outro campo: veio `console.log(1)`, o conteúdo da publicação.
+
+Registrado também o caminho de erro: quando o clique é disparado por script em
+vez de por uma pessoa, o navegador recusa com `NotAllowedError`, porque a API
+exige gesto do usuário. Nesse caso a página seleciona o texto e troca o rótulo
+do botão para "Selecione e copie", em vez de falhar calada.
+
+**O que contaria como falha:** o botão não fazer nada quando a API é recusada,
+deixando a pessoa sem saber se copiou.
+
+**Situação: aprovado.**
+
+### Dois defeitos encontrados e corrigidos durante estes testes
+
+Ambos de texto, achados por ler o DOM e não por olhar a tela:
+
+1. A contagem da lista saía como "2 publicacaes" — plural montado por
+   concatenação dentro do template. Trocado por uma escolha explícita entre
+   "publicacao" e "publicacoes".
+2. Depois de votar, o rótulo continuava "votos" mesmo quando o total ia para
+   1. O rótulo passou a ser atualizado junto com o número.
+
+Registrados aqui porque uma validação que só lista acertos não é validação.
+
+### O que este teste NÃO cobre
+
+- Tudo isto é **local**. A mesma bateria precisa ser repetida no endereço
+  público, com o banco de produção, que hoje está vazio.
+- A interface não foi testada em tela de celular, nem com leitor de tela.
+- Conteúdo com HTML dentro (`<script>`) não foi submetido como caso de teste;
+  a defesa existe no código, que monta tudo por `textContent` e nunca por
+  `innerHTML`, mas não há prova registrada.
+- Não foi testado o comportamento com a sessão expirando no meio do uso.
